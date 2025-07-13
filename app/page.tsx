@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Server, Globe, Mail, AlertCircle, CheckCircle, Loader2, Copy, Terminal, Zap, Info, X, User, Calendar, Building } from 'lucide-react';
 
@@ -51,7 +51,7 @@ interface WhoisData {
   rawOutput?: string;
 }
 
-export default function DNSAnalyzer() {
+function DNSAnalyzerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [domain, setDomain] = useState('');
@@ -645,8 +645,6 @@ export default function DNSAnalyzer() {
     setIsLoading(false);
   };
 
-
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
@@ -1188,5 +1186,20 @@ export default function DNSAnalyzer() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DNSAnalyzer() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-green-400 font-mono">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading DNS Analyzer...</p>
+        </div>
+      </div>
+    }>
+      <DNSAnalyzerContent />
+    </Suspense>
   );
 }
