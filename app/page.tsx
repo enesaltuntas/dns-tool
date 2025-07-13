@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Server, Globe, Mail, AlertCircle, CheckCircle, Loader2, Copy, Terminal, Zap, Info, X, User, Calendar, Building } from 'lucide-react';
 
 interface DNSRecord {
@@ -49,9 +51,9 @@ interface WhoisData {
   rawOutput?: string;
 }
 
-function App() {
-  const { domain: urlDomain } = useParams();
-  const navigate = useNavigate();
+export default function DNSAnalyzer() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [domain, setDomain] = useState('');
   const [activeTab, setActiveTab] = useState<'dns' | 'whois'>('dns');
   const [isLoading, setIsLoading] = useState(false);
@@ -78,8 +80,9 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-analyze domain from URL
+  // Get domain from URL params
   useEffect(() => {
+    const urlDomain = searchParams.get('domain');
     if (urlDomain && urlDomain !== domain) {
       setDomain(urlDomain);
       if (activeTab === 'dns') {
@@ -88,15 +91,15 @@ function App() {
         performWhoisLookup(urlDomain);
       }
     }
-  }, [urlDomain, activeTab]);
+  }, [searchParams, activeTab]);
 
   // Update URL when domain changes
   const handleDomainChange = (newDomain: string) => {
     setDomain(newDomain);
     if (newDomain.trim()) {
-      navigate(`/${newDomain}`);
+      router.push(`/?domain=${encodeURIComponent(newDomain)}`);
     } else {
-      navigate('/');
+      router.push('/');
     }
   };
 
@@ -554,8 +557,7 @@ function App() {
     const startTime = Date.now();
 
     try {
-      // Use proxied endpoint to avoid CORS/mixed content issues
-      const response = await fetch(`/api/whois/${testDomain}`);
+      const response = await fetch(`/api/whois?domain=${encodeURIComponent(testDomain)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -563,7 +565,6 @@ function App() {
       
       const data = await response.json();
 
-      // WHOIS verilerini parse et
       const whoisInfo: WhoisData = {
         domain: testDomain,
         registrar: data.registrar || 'Unknown',
@@ -791,7 +792,7 @@ function App() {
             
             {/* URL Info */}
             <div className="mt-3 text-xs text-gray-400">
-              <span className="text-cyan-400">TIP:</span> You can also visit /{domain || 'domain.com'} to analyze directly
+              <span className="text-cyan-400">TIP:</span> You can also visit /?domain={domain || 'domain.com'} to analyze directly
             </div>
           </div>
         </div>
@@ -1168,5 +1169,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
