@@ -13,7 +13,9 @@
     "next": "^14.0.0",
     "node-fetch": "^3.3.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "whois": "^2.15.0",
+    "whois-json": "^2.0.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

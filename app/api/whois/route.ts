@@ -23,52 +23,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Try whoisjson.com API first
-    try {
-      const whoisResponse = await fetch(`https://whoisjson.com/api/v1/whois?domain=${domain}`, {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    // Use whois-json package for lookup
+    const whois = require('whois-json');
+    const whoisData = await whois(domain);
+    
+    console.log('WHOIS result:', whoisData);
 
-      if (whoisResponse.ok) {
-        const whoisData = await whoisResponse.json();
-        
-        // Parse the response and return structured data
-        const structuredData = {
-          domain: domain,
-          registrar: whoisData.registrar?.name || 'Unknown',
-          registrationDate: whoisData.created_date || 'Unknown',
-          expirationDate: whoisData.expires_date || 'Unknown',
-          nameservers: whoisData.nameservers || [],
-          status: whoisData.status || [],
-          registrant: {
-            name: whoisData.registrant?.name || 'Privacy Protected',
-            organization: whoisData.registrant?.organization,
-            country: whoisData.registrant?.country,
-            email: whoisData.registrant?.email,
-          },
-          admin: {
-            name: whoisData.admin?.name || 'Privacy Protected',
-            organization: whoisData.admin?.organization,
-            country: whoisData.admin?.country,
-            email: whoisData.admin?.email,
-          },
-          tech: {
-            name: whoisData.tech?.name || 'Privacy Protected',
-            organization: whoisData.tech?.organization,
-            country: whoisData.tech?.country,
-            email: whoisData.tech?.email,
-          },
-        };
+    // Map whois-json response to expected format
+    const mappedData = mapWhoisJsonToExpectedFormat(whoisData, domain);
 
-        return NextResponse.json(structuredData);
-      }
-    } catch (apiError) {
-      console.log('WHOIS API failed, providing demo data:', apiError);
-    }
+    return NextResponse.json(mappedData);
 
-    // Fallback: Provide demo/example data
+  } catch (error) {
+    console.error('WHOIS lookup error:', error);
+    
+    // If whois lookup fails, return demo data as fallback
     const demoData = {
       domain: domain,
       registrar: 'Demo Registrar Inc.',
@@ -104,15 +73,60 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(demoData);
-
-  } catch (error) {
-    console.error('WHOIS lookup error:', error);
-    return NextResponse.json(
-      { 
-        error: 'WHOIS lookup failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
   }
+}
+
+function mapWhoisJsonToExpectedFormat(whoisData: any, domain: string) {
+  // Parse nameservers - they can be a string or already an array
+  let nameservers: string[] = [];
+  if (whoisData.nameServer) {
+    if (typeof whoisData.nameServer === 'string') {
+      nameservers = whoisData.nameServer.split(' ').filter((ns: string) => ns.trim().length > 0);
+    } else if (Array.isArray(whoisData.nameServer)) {
+      nameservers = whoisData.nameServer;
+    }
+  }
+
+  // Parse domain status - can be a string with multiple statuses
+  let status: string[] = [];
+  if (whoisData.domainStatus) {
+    if (typeof whoisData.domainStatus === 'string') {
+      // Extract status codes from the string (remove URLs and descriptions)
+      const statusMatches = whoisData.domainStatus.match(/(\w+(?:Transfer|Update|Delete)Prohibited)/g);
+      if (statusMatches) {
+        status = statusMatches;
+      } else {
+        status = [whoisData.domainStatus];
+      }
+    } else if (Array.isArray(whoisData.domainStatus)) {
+      status = whoisData.domainStatus;
+    }
+  }
+
+  return {
+    domain: domain,
+    registrar: whoisData.registrar || 'Unknown',
+    registrationDate: whoisData.creationDate || 'Unknown',
+    expirationDate: whoisData.registrarRegistrationExpirationDate || 'Unknown',
+    nameservers: nameservers,
+    status: status,
+    registrant: {
+      name: whoisData.registrantName || 'Privacy Protected',
+      organization: whoisData.registrantOrganization || '',
+      country: whoisData.registrantCountry || '',
+      email: whoisData.registrantEmail || ''
+    },
+    admin: {
+      name: whoisData.adminName || 'Privacy Protected',
+      organization: whoisData.adminOrganization || '',
+      country: whoisData.adminCountry || '',
+      email: whoisData.adminEmail || ''
+    },
+    tech: {
+      name: whoisData.techName || 'Privacy Protected',
+      organization: whoisData.techOrganization || '',
+      country: whoisData.techCountry || '',
+      email: whoisData.techEmail || ''
+    }
+  };
 }

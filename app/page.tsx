@@ -80,26 +80,30 @@ export default function DNSAnalyzer() {
     return () => clearInterval(timer);
   }, []);
 
-  // Get domain from URL params
+  // Get domain from URL params and redirect to new format
   useEffect(() => {
     const urlDomain = searchParams.get('domain');
-    if (urlDomain && urlDomain !== domain) {
-      setDomain(urlDomain);
-      if (activeTab === 'dns') {
-        performDNSTests(urlDomain);
-      } else {
-        performWhoisLookup(urlDomain);
-      }
+    if (urlDomain) {
+      router.push(`/${encodeURIComponent(urlDomain)}`);
     }
-  }, [searchParams, activeTab]);
+  }, [searchParams, router]);
 
-  // Update URL when domain changes
+  // Update URL when domain changes (only update state, don't navigate)
   const handleDomainChange = (newDomain: string) => {
     setDomain(newDomain);
-    if (newDomain.trim()) {
-      router.push(`/?domain=${encodeURIComponent(newDomain)}`);
-    } else {
-      router.push('/');
+  };
+
+  // Handle search button click or enter key
+  const handleSearch = () => {
+    if (domain.trim()) {
+      router.push(`/${encodeURIComponent(domain.trim())}`);
+    }
+  };
+
+  // Handle enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -641,13 +645,7 @@ export default function DNSAnalyzer() {
     setIsLoading(false);
   };
 
-  const handleAnalyze = () => {
-    if (activeTab === 'dns') {
-      performDNSTests(domain);
-    } else {
-      performWhoisLookup(domain);
-    }
-  };
+
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -722,16 +720,39 @@ export default function DNSAnalyzer() {
 
         {/* Main Title */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-green-400 mb-2 tracking-wider">
-            ╔══════════════════════════════════════╗
-          </h1>
-          <h1 className="text-4xl font-bold text-green-400 mb-2 tracking-wider">
-            ║      COMPREHENSIVE DNS ANALYZER     ║
-          </h1>
-          <h1 className="text-4xl font-bold text-green-400 mb-4 tracking-wider">
-            ╚══════════════════════════════════════╝
-          </h1>
-          <p className="text-cyan-400 text-lg">Advanced Domain Name System Analysis Suite v3.0.0</p>
+          {/* Matrix Style Title */}
+          <div className="relative">
+            {/* Glitch overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-400 tracking-wider opacity-20 animate-pulse">
+                DNS ANALYZER
+              </h1>
+            </div>
+            
+            {/* Main title */}
+            <div className="relative z-10">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-400 mb-4 tracking-wider animate-pulse">
+                <span className="inline-block bg-gradient-to-r from-green-300 via-green-400 to-cyan-400 bg-clip-text text-transparent">
+                  DNS
+                </span>
+                <span className="mx-2 text-green-400">•</span>
+                <span className="inline-block bg-gradient-to-r from-cyan-400 via-green-400 to-green-300 bg-clip-text text-transparent">
+                  ANALYZER
+                </span>
+              </h1>
+              
+              {/* Matrix dots */}
+              <div className="flex justify-center mt-4 space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-cyan-400 text-base sm:text-lg mt-4 font-mono">
+            <span className="text-green-400">&gt;</span> Advanced Domain Name System Analysis Suite v3.0.0
+          </p>
         </div>
 
         {/* Command Input */}
@@ -775,13 +796,13 @@ export default function DNSAnalyzer() {
                   type="text"
                   value={domain}
                   onChange={(e) => handleDomainChange(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   placeholder="example.com"
                   className="w-full px-4 py-3 bg-black border border-green-500/50 rounded text-green-400 focus:border-green-400 focus:outline-none transition-colors font-mono"
-                  onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
                 />
               </div>
               <button
-                onClick={handleAnalyze}
+                onClick={handleSearch}
                 disabled={!domain.trim() || isLoading || isWhoisLoading}
                 className="px-6 py-3 bg-green-600 text-black rounded hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-bold"
               >
@@ -792,7 +813,7 @@ export default function DNSAnalyzer() {
             
             {/* URL Info */}
             <div className="mt-3 text-xs text-gray-400">
-              <span className="text-cyan-400">TIP:</span> You can also visit /?domain={domain || 'domain.com'} to analyze directly
+              <span className="text-cyan-400">TIP:</span> You can also visit /{domain || 'domain.com'} to analyze directly
             </div>
           </div>
         </div>
