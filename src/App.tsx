@@ -796,8 +796,8 @@ function App() {
           </div>
         </div>
 
-        {/* Results */}
-        {Object.keys(results).length > 0 && (
+        {/* DNS Results */}
+        {activeTab === 'dns' && Object.keys(results).length > 0 && (
           <div className="max-w-7xl mx-auto">
             {categories.map((category) => {
               const categoryResults = results[category.key] || [];
@@ -866,7 +866,7 @@ function App() {
               <div className="text-center mt-8">
                 <div className="bg-gray-900 border border-green-500/30 rounded-lg p-4 inline-block">
                   <p className="text-green-400 text-sm">
-                    Processed in {processingTime.toFixed(3)} seconds.
+                    DNS Analysis completed in {processingTime.toFixed(3)} seconds.
                   </p>
                 </div>
               </div>
@@ -874,14 +874,251 @@ function App() {
           </div>
         )}
 
-        {/* Loading State */}
-        {isLoading && (
+        {/* WHOIS Results */}
+        {activeTab === 'whois' && whoisData && (
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-gray-900 border border-green-500/30 rounded-lg overflow-hidden shadow-2xl">
+              {/* WHOIS Header */}
+              <div className="bg-gray-800 border-b border-green-500/30 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="text-cyan-400">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-green-400 tracking-wider">WHOIS INFORMATION</h2>
+                    <p className="text-sm text-gray-400">Domain registration and ownership details</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        DOMAIN INFORMATION
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Domain:</span>
+                          <span className="text-cyan-400 font-mono">{whoisData.domain}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Registrar:</span>
+                          <span className="text-green-400 font-mono">{whoisData.registrar}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Status:</span>
+                          <span className="text-yellow-400 font-mono text-xs">
+                            {whoisData.status.length > 0 ? whoisData.status[0] : 'Unknown'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        DATES
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Registered:</span>
+                          <span className="text-cyan-400 font-mono">{whoisData.registrationDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Expires:</span>
+                          <span className="text-yellow-400 font-mono">{whoisData.expirationDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Server className="h-4 w-4" />
+                        NAMESERVERS
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {whoisData.nameservers.length > 0 ? (
+                          whoisData.nameservers.map((ns, index) => (
+                            <div key={index} className="flex justify-between">
+                              <span className="text-gray-400">NS{index + 1}:</span>
+                              <span className="text-cyan-400 font-mono">{ns}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-gray-500 italic">No nameservers found</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-4">
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        REGISTRANT
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Name:</span>
+                          <span className="text-cyan-400 font-mono">{whoisData.registrant.name}</span>
+                        </div>
+                        {whoisData.registrant.organization && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Organization:</span>
+                            <span className="text-green-400 font-mono">{whoisData.registrant.organization}</span>
+                          </div>
+                        )}
+                        {whoisData.registrant.country && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Country:</span>
+                            <span className="text-yellow-400 font-mono">{whoisData.registrant.country}</span>
+                          </div>
+                        )}
+                        {whoisData.registrant.email && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Email:</span>
+                            <span className="text-cyan-400 font-mono">{whoisData.registrant.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        ADMINISTRATIVE CONTACT
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Name:</span>
+                          <span className="text-cyan-400 font-mono">{whoisData.admin.name}</span>
+                        </div>
+                        {whoisData.admin.organization && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Organization:</span>
+                            <span className="text-green-400 font-mono">{whoisData.admin.organization}</span>
+                          </div>
+                        )}
+                        {whoisData.admin.country && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Country:</span>
+                            <span className="text-yellow-400 font-mono">{whoisData.admin.country}</span>
+                          </div>
+                        )}
+                        {whoisData.admin.email && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Email:</span>
+                            <span className="text-cyan-400 font-mono">{whoisData.admin.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                      <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Terminal className="h-4 w-4" />
+                        TECHNICAL CONTACT
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Name:</span>
+                          <span className="text-cyan-400 font-mono">{whoisData.tech.name}</span>
+                        </div>
+                        {whoisData.tech.organization && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Organization:</span>
+                            <span className="text-green-400 font-mono">{whoisData.tech.organization}</span>
+                          </div>
+                        )}
+                        {whoisData.tech.country && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Country:</span>
+                            <span className="text-yellow-400 font-mono">{whoisData.tech.country}</span>
+                          </div>
+                        )}
+                        {whoisData.tech.email && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Email:</span>
+                            <span className="text-cyan-400 font-mono">{whoisData.tech.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Details */}
+                {whoisData.status.length > 1 && (
+                  <div className="mt-6 bg-gray-800 border border-green-500/30 rounded-lg p-4">
+                    <h3 className="text-green-400 font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      DOMAIN STATUS
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      {whoisData.status.map((status, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                          <span className="text-gray-300 font-mono text-xs">{status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Processing Time */}
+            {whoisProcessingTime > 0 && (
+              <div className="text-center mt-8">
+                <div className="bg-gray-900 border border-green-500/30 rounded-lg p-4 inline-block">
+                  <p className="text-green-400 text-sm">
+                    WHOIS lookup completed in {whoisProcessingTime.toFixed(3)} seconds.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* WHOIS Error */}
+        {activeTab === 'whois' && whoisError && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-gray-900 border border-red-500/30 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertCircle className="h-6 w-6 text-red-400" />
+                <h3 className="text-xl font-bold text-red-400">WHOIS LOOKUP FAILED</h3>
+              </div>
+              <p className="text-red-300 font-mono text-sm">{whoisError}</p>
+            </div>
+          </div>
+        )}
+
+        {/* DNS Loading State */}
+        {activeTab === 'dns' && isLoading && (
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gray-900 border border-green-500/30 rounded-lg p-8">
               <Loader2 className="h-8 w-8 animate-spin text-cyan-400 mx-auto mb-4" />
               <p className="text-green-400 text-lg mb-2">ANALYZING DNS CONFIGURATION...</p>
               <div className="text-cyan-400 animate-pulse">
                 [████████████████████████████████] SCANNING...
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* WHOIS Loading State */}
+        {activeTab === 'whois' && isWhoisLoading && (
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-gray-900 border border-green-500/30 rounded-lg p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-cyan-400 mx-auto mb-4" />
+              <p className="text-green-400 text-lg mb-2">PERFORMING WHOIS LOOKUP...</p>
+              <div className="text-cyan-400 animate-pulse">
+                [████████████████████████████████] QUERYING...
               </div>
             </div>
           </div>
