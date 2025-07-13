@@ -18,8 +18,15 @@ app.use(express.json());
 // Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
+// Debug middleware to log requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // WHOIS endpoint using system command
 app.get('/api/whois/:domain', async (req, res) => {
+  console.log(`WHOIS API called for domain: ${req.params.domain}`);
   try {
     const domain = req.params.domain;
     
@@ -32,9 +39,30 @@ app.get('/api/whois/:domain', async (req, res) => {
     }
     
     // Execute WHOIS command
-    exec(`whois ${domain}`, (error, stdout, stderr) => {
+    exec(`whois ${domain}`, { timeout: 10000 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`whois command failed: ${error}`);
+        
+        // If whois command is not available, provide fallback data
+        if (error.code === 'ENOENT' || error.message.includes('command not found')) {
+          console.log(`WHOIS command not found, providing fallback data for ${domain}`);
+          
+          const fallbackData = {
+            domain: domain,
+            registrar: 'N/A (whois command not available)',
+            registrationDate: 'N/A',
+            expirationDate: 'N/A',
+            nameservers: [],
+            status: ['Command not available on server'],
+            registrant: { name: 'N/A' },
+            admin: { name: 'N/A' },
+            tech: { name: 'N/A' },
+            rawOutput: 'WHOIS command not available on this server'
+          };
+          
+          return res.json(fallbackData);
+        }
+        
         return res.status(500).json({ 
           error: 'WHOIS lookup failed',
           message: error.message 
