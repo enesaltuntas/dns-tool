@@ -907,10 +907,14 @@ function App() {
                 <h3 className="font-bold text-cyan-400 mb-2">WWW:</h3>
                 <p>WWW subdomain A/CNAME record analysis and validation</p>
               </div>
+              <div>
+                <h3 className="font-bold text-cyan-400 mb-2">WHOIS:</h3>
+                <p>Domain registration information and ownership details</p>
+              </div>
             </div>
             <div className="mt-6 pt-4 border-t border-green-500/20 text-center">
               <p className="text-gray-400 text-xs">
-                DNS_ANALYZER v3.0.0 | Powered by Cloudflare 1.1.1.1 DNS API | Status: OPERATIONAL
+                DNS_ANALYZER v3.1.0 | Powered by Cloudflare 1.1.1.1 DNS API & WHOIS Services | Status: OPERATIONAL
               </p>
             </div>
           </div>
