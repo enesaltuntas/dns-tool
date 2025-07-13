@@ -553,89 +553,52 @@ function App() {
     const startTime = Date.now();
 
     try {
-      // Birden fazla WHOIS API'si deneyeceğiz
-      let response;
-      let data;
+      // Kendi backend API'mizi kullan
+      const response = await fetch(`http://localhost:3001/api/whois/${testDomain}`);
       
-      // İlk olarak whoisjson.com'u deneyelim
-      try {
-        response = await fetch(`https://whoisjson.com/api/v1/whois?domain=${testDomain}`);
-        if (response.ok) {
-          data = await response.json();
-        }
-      } catch (error) {
-        console.log('whoisjson.com failed, trying alternative...');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      // Eğer ilk API başarısız olursa, alternatif API'yi deneyelim
-      if (!data) {
-        try {
-          response = await fetch(`https://api.whoisfreaks.com/v1.0/whois?apiKey=YOUR_API_KEY&whois=live&domainName=${testDomain}`);
-          if (response.ok) {
-            data = await response.json();
-          }
-        } catch (error) {
-          console.log('whoisfreaks.com failed, trying mock data...');
-        }
-      }
-      
-      // Eğer hiçbiri çalışmazsa, demo verisi gösterelim
-      if (!data) {
-        // Demo WHOIS verisi (gerçek API entegrasyonu için)
-        data = {
-          domain_name: testDomain.toUpperCase(),
-          registrar: "Example Registrar Inc.",
-          creation_date: "2023-01-15T10:30:00Z",
-          expiration_date: "2024-01-15T10:30:00Z",
-          name_servers: [
-            "ns1.example.com",
-            "ns2.example.com"
-          ],
-          status: ["clientTransferProhibited"],
-          registrant_name: "Privacy Protected",
-          registrant_organization: "Domains By Proxy LLC",
-          registrant_country: "US",
-          admin_name: "Privacy Protected",
-          admin_organization: "Domains By Proxy LLC",
-          admin_country: "US",
-          tech_name: "Privacy Protected",
-          tech_organization: "Domains By Proxy LLC",
-          tech_country: "US"
-        };
-      }
+      const data = await response.json();
 
       // WHOIS verilerini parse et
       const whoisInfo: WhoisData = {
         domain: testDomain,
-        registrar: data.registrar || data.registrar_name || 'Unknown',
-        registrationDate: data.creation_date || data.created_date || 'Unknown',
-        expirationDate: data.expiration_date || data.expires_date || 'Unknown',
-        nameservers: data.name_servers || [],
+        registrar: data.registrar || 'Unknown',
+        registrationDate: data.registrationDate || 'Unknown',
+        expirationDate: data.expirationDate || 'Unknown',
+        nameservers: data.nameservers || [],
         status: data.status || [],
         registrant: {
-          name: data.registrant_name || 'Privacy Protected',
-          organization: data.registrant_organization,
-          country: data.registrant_country,
-          email: data.registrant_email,
+          name: data.registrant?.name || 'Privacy Protected',
+          organization: data.registrant?.organization,
+          country: data.registrant?.country,
+          email: data.registrant?.email,
         },
         admin: {
-          name: data.admin_name || 'Privacy Protected',
-          organization: data.admin_organization,
-          country: data.admin_country,
-          email: data.admin_email,
+          name: data.admin?.name || 'Privacy Protected',
+          organization: data.admin?.organization,
+          country: data.admin?.country,
+          email: data.admin?.email,
         },
         tech: {
-          name: data.tech_name || 'Privacy Protected',
-          organization: data.tech_organization,
-          country: data.tech_country,
-          email: data.tech_email,
+          name: data.tech?.name || 'Privacy Protected',
+          organization: data.tech?.organization,
+          country: data.tech?.country,
+          email: data.tech?.email,
         },
       };
 
       setWhoisData(whoisInfo);
 
     } catch (error) {
-      setWhoisError(error instanceof Error ? error.message : 'WHOIS lookup failed');
+      console.error('WHOIS lookup error:', error);
+      setWhoisError(
+        error instanceof Error 
+          ? `WHOIS lookup failed: ${error.message}` 
+          : 'WHOIS lookup failed'
+      );
     }
 
     const endTime = Date.now();
