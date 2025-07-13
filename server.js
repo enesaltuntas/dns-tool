@@ -2,13 +2,21 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import { exec } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // CORS middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // WHOIS endpoint using system command
 app.get('/api/whois/:domain', async (req, res) => {
@@ -109,6 +117,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Catch-all handler: send back React's index.html file for SPA routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist/index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`WHOIS API server running on http://localhost:${PORT}`);
+  console.log(`DNS Tool server running on http://localhost:${PORT}`);
+  console.log(`Serving static files from: ${path.join(__dirname, 'dist')}`);
 });
