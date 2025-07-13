@@ -46,6 +46,7 @@ interface WhoisData {
     country?: string;
     email?: string;
   };
+  rawOutput?: string;
 }
 
 function App() {
