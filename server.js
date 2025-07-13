@@ -15,14 +15,13 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
 // Debug middleware to log requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
+
+// API ROUTES MUST COME BEFORE STATIC FILE SERVING!
 
 // WHOIS endpoint using system command
 app.get('/api/whois/:domain', async (req, res) => {
@@ -144,6 +143,9 @@ app.get('/api/whois/:domain', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// NOW serve static files (after API routes)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Catch-all handler: send back React's index.html file for SPA routing
 app.get('*', (req, res) => {
