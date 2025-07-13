@@ -553,8 +553,8 @@ function App() {
     const startTime = Date.now();
 
     try {
-      // Kendi backend API'mizi kullan
-      const response = await fetch(`http://localhost:3001/api/whois/${testDomain}`);
+      // Use proxied endpoint to avoid CORS/mixed content issues
+      const response = await fetch(`/api/whois/${testDomain}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
