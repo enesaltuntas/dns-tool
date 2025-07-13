@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Server, Globe, Mail, AlertCircle, CheckCircle, Loader2, Copy, Terminal, Zap, Info, X } from 'lucide-react';
+import { Search, Server, Globe, Mail, AlertCircle, CheckCircle, Loader2, Copy, Terminal, Zap, Info, X, User, Calendar, Building } from 'lucide-react';
 
 interface DNSRecord {
   name: string;
@@ -21,14 +21,46 @@ interface CategoryResults {
   [key: string]: TestResult[];
 }
 
+interface WhoisData {
+  domain: string;
+  registrar: string;
+  registrationDate: string;
+  expirationDate: string;
+  nameservers: string[];
+  status: string[];
+  registrant: {
+    name?: string;
+    organization?: string;
+    country?: string;
+    email?: string;
+  };
+  admin: {
+    name?: string;
+    organization?: string;
+    country?: string;
+    email?: string;
+  };
+  tech: {
+    name?: string;
+    organization?: string;
+    country?: string;
+    email?: string;
+  };
+}
+
 function App() {
   const { domain: urlDomain } = useParams();
   const navigate = useNavigate();
   const [domain, setDomain] = useState('');
+  const [activeTab, setActiveTab] = useState<'dns' | 'whois'>('dns');
   const [isLoading, setIsLoading] = useState(false);
+  const [isWhoisLoading, setIsWhoisLoading] = useState(false);
   const [results, setResults] = useState<CategoryResults>({});
+  const [whoisData, setWhoisData] = useState<WhoisData | null>(null);
+  const [whoisError, setWhoisError] = useState<string | null>(null);
   const [terminalText, setTerminalText] = useState('');
   const [processingTime, setProcessingTime] = useState(0);
+  const [whoisProcessingTime, setWhoisProcessingTime] = useState(0);
 
   // Terminal typing effect
   useEffect(() => {
@@ -49,9 +81,13 @@ function App() {
   useEffect(() => {
     if (urlDomain && urlDomain !== domain) {
       setDomain(urlDomain);
-      performDNSTests(urlDomain);
+      if (activeTab === 'dns') {
+        performDNSTests(urlDomain);
+      } else {
+        performWhoisLookup(urlDomain);
+      }
     }
-  }, [urlDomain]);
+  }, [urlDomain, activeTab]);
 
   // Update URL when domain changes
   const handleDomainChange = (newDomain: string) => {
@@ -508,6 +544,64 @@ function App() {
     return results;
   };
 
+  const performWhoisLookup = async (testDomain: string) => {
+    if (!testDomain.trim()) return;
+
+    setIsWhoisLoading(true);
+    setWhoisData(null);
+    setWhoisError(null);
+    const startTime = Date.now();
+
+    try {
+      // WHOIS API'si simülasyonu - gerçek bir WHOIS API'si kullanmanız gerekecek
+      // Örnek: whoisjson.com, whois.freeapi.app, vb.
+      const response = await fetch(`https://whoisjson.com/api/v1/whois?domain=${testDomain}`);
+      
+      if (!response.ok) {
+        throw new Error(`WHOIS lookup failed: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // WHOIS verilerini parse et
+      const whoisInfo: WhoisData = {
+        domain: testDomain,
+        registrar: data.registrar || 'Unknown',
+        registrationDate: data.creation_date || 'Unknown',
+        expirationDate: data.expiration_date || 'Unknown',
+        nameservers: data.name_servers || [],
+        status: data.status || [],
+        registrant: {
+          name: data.registrant_name,
+          organization: data.registrant_organization,
+          country: data.registrant_country,
+          email: data.registrant_email,
+        },
+        admin: {
+          name: data.admin_name,
+          organization: data.admin_organization,
+          country: data.admin_country,
+          email: data.admin_email,
+        },
+        tech: {
+          name: data.tech_name,
+          organization: data.tech_organization,
+          country: data.tech_country,
+          email: data.tech_email,
+        },
+      };
+
+      setWhoisData(whoisInfo);
+
+    } catch (error) {
+      setWhoisError(error instanceof Error ? error.message : 'WHOIS lookup failed');
+    }
+
+    const endTime = Date.now();
+    setWhoisProcessingTime((endTime - startTime) / 1000);
+    setIsWhoisLoading(false);
+  };
+
   const performDNSTests = async (testDomain: string) => {
     if (!testDomain.trim()) return;
 
@@ -539,6 +633,14 @@ function App() {
     const endTime = Date.now();
     setProcessingTime((endTime - startTime) / 1000);
     setIsLoading(false);
+  };
+
+  const handleAnalyze = () => {
+    if (activeTab === 'dns') {
+      performDNSTests(domain);
+    } else {
+      performWhoisLookup(domain);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -629,9 +731,37 @@ function App() {
         {/* Command Input */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="bg-gray-900 border border-green-500/30 rounded-lg p-6 shadow-2xl">
+            {/* Tab Navigation */}
+            <div className="flex gap-4 mb-6">
+              <button
+                onClick={() => setActiveTab('dns')}
+                className={`px-4 py-2 rounded font-bold transition-colors ${
+                  activeTab === 'dns'
+                    ? 'bg-green-600 text-black'
+                    : 'bg-gray-800 text-green-400 hover:bg-gray-700'
+                }`}
+              >
+                <Server className="h-4 w-4 inline mr-2" />
+                DNS ANALYSIS
+              </button>
+              <button
+                onClick={() => setActiveTab('whois')}
+                className={`px-4 py-2 rounded font-bold transition-colors ${
+                  activeTab === 'whois'
+                    ? 'bg-green-600 text-black'
+                    : 'bg-gray-800 text-green-400 hover:bg-gray-700'
+                }`}
+              >
+                <User className="h-4 w-4 inline mr-2" />
+                WHOIS LOOKUP
+              </button>
+            </div>
+
             <div className="flex items-center gap-2 mb-4">
               <span className="text-green-400">root@dns-analyzer:~$</span>
-              <span className="text-cyan-400">dns-analyze --comprehensive --domain</span>
+              <span className="text-cyan-400">
+                {activeTab === 'dns' ? 'dns-analyze --comprehensive --domain' : 'whois --detailed --domain'}
+              </span>
             </div>
             <div className="flex gap-4">
               <div className="flex-1">
@@ -641,16 +771,16 @@ function App() {
                   onChange={(e) => handleDomainChange(e.target.value)}
                   placeholder="example.com"
                   className="w-full px-4 py-3 bg-black border border-green-500/50 rounded text-green-400 focus:border-green-400 focus:outline-none transition-colors font-mono"
-                  onKeyPress={(e) => e.key === 'Enter' && performDNSTests(domain)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
                 />
               </div>
               <button
-                onClick={() => performDNSTests(domain)}
-                disabled={!domain.trim() || isLoading}
+                onClick={handleAnalyze}
+                disabled={!domain.trim() || isLoading || isWhoisLoading}
                 className="px-6 py-3 bg-green-600 text-black rounded hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-bold"
               >
                 <Search className="h-4 w-4" />
-                ANALYZE
+                {activeTab === 'dns' ? 'ANALYZE' : 'LOOKUP'}
               </button>
             </div>
             
